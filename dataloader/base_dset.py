@@ -40,7 +40,7 @@ class BaseDset(object):
 
         return len(self.__train_keys), len(self.__test_keys)
 
-    def getTriplet(self, split='train'):
+    def getTriplet(self, mix=False, split='train'):
         if split == 'train':
             dataset = self.__train_set
             keys = self.__train_keys
@@ -56,9 +56,35 @@ class BaseDset(object):
 
         pos_idx = random.randint(0, len(keys) - 1)
         while True:
-            neg_idx = random.randint(0, len(keys) - 1)
-            if pos_idx != neg_idx:
-                break
+            if not mix:
+                neg_idx = random.randint(0, len(keys) - 1)
+                if "cr" not in keys[pos_idx] and "cr" not in keys[neg_idx]:
+                    if pos_idx != neg_idx:
+                        break
+                if "cr" in keys[pos_idx] and "cr" in keys[neg_idx]:
+                    Flag = False
+                    if keys[pos_idx] in keys[neg_idx] or keys[neg_idx] in keys[pos_idx]:
+                        Flag = True
+                    if pos_idx != neg_idx and not Flag:
+                        break
+            else:
+                neg_idx = random.randint(0, len(keys) - 1)
+                Flag = False
+                if keys[pos_idx] in keys[neg_idx] or keys[neg_idx] in keys[pos_idx]:
+                    Flag = True
+                if "cr" not in keys[pos_idx] and "cr" in keys[neg_idx]:
+                    if pos_idx != neg_idx and not Flag:
+                        break
+                if "cr" in keys[pos_idx] and "cr" not in keys[neg_idx]:
+                    if pos_idx != neg_idx:
+                        break
+        # if "Copy" in keys[pos_idx] and "cr" in keys[neg_idx]:
+        #     print("--pos_idx", keys[pos_idx])
+        #     print("neg_idx", keys[neg_idx])
+        # with open("check_train.txt", "a") as f:
+        #     f.write("adf")
+            # f.write(f"--pos_idx {keys[pos_idx]}\n")
+            # f.write(f"--neg_idx {keys[neg_idx]}\n")
 
         pos_anchor_img_idx = random.randint(0, len(dataset[keys[pos_idx]]) - 1)
         while True:

@@ -1,9 +1,9 @@
 RESNET:
-  FIXED_BLOCKS: 2
+  FIXED_BLOCKS: 0
 
 DATASETS:
-  VGGFACE2:
-    HOME: ""
+  # VGGFACE2:
+  #   HOME: ""
   CUSTOM:
-    HOME: ""
+    HOME: "/mnt/28857F714F734EE8/quan_tran/palmline/dataset/data_V2"
 

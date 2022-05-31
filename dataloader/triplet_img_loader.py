@@ -7,35 +7,50 @@ from torchvision import transforms
 from torchvision.datasets import MNIST, FashionMNIST
 
 from dataloader import mnist, vggface2, custom_dset
-
+from PIL import Image
 
 class BaseLoader(torch.utils.data.Dataset):
     def __init__(self, triplets, transform=None):
         self.triplets = triplets
         self.transform = transform
+        self.size =  (228, 228) #(240, 240)
 
     def __getitem__(self, index):
         img1_pth, img2_pth, img3_pth = self.triplets[index]
         img1 = cv2.imread(img1_pth)
         img2 = cv2.imread(img2_pth)
         img3 = cv2.imread(img3_pth)
+        
 
         try:
-            img1 = cv2.resize(img1, (228, 228))
+            img1 = cv2.resize(img1, self.size)
+            img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
         except Exception as e:
             img1 = np.zeros((228, 228, 3), dtype=np.uint8)
 
         try:
-            img2 = cv2.resize(img2, (228, 228))
+            img2 = cv2.resize(img2, self.size)
+            img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+
         except Exception as e:
             img2 = np.zeros((228, 228, 3), dtype=np.uint8)
 
         try:
-            img3 = cv2.resize(img3, (228, 228))
+            img3 = cv2.resize(img3, self.size)
+            img3 = cv2.cvtColor(img3, cv2.COLOR_BGR2RGB)
+
         except Exception as e:
             img3 = np.zeros((228, 228, 3), dtype=np.uint8)
 
         if self.transform is not None:
+            # You may need to convert the color.
+            # img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+            # img1 = Image.fromarray(img1)
+            # img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+            # img2 = Image.fromarray(img2)
+            # img3 = cv2.cvtColor(img3, cv2.COLOR_BGR2RGB)
+            # img3 = Image.fromarray(img3)
+            
             img1 = self.transform(img1)
             img2 = self.transform(img2)
             img3 = self.transform(img3)
@@ -82,6 +97,8 @@ def get_loader(args):
         dset_obj = vggface2.VGGFace2()
     elif args.dataset == 'custom':
         dset_obj = custom_dset.Custom()
+    elif args.dataset == 'others':
+        dset_obj = custom_dset.Custom()
     elif (args.dataset == 'mnist') or (args.dataset == 'fmnist'):
         train_dataset, test_dataset = None, None
         if args.dataset == 'mnist':
@@ -97,15 +114,25 @@ def get_loader(args):
 
     dset_obj.load()
     for i in range(args.num_train_samples):
-        pos_anchor_img, pos_img, neg_img = dset_obj.getTriplet()
+        MIX_FLAG = i > 0.8*args.num_train_samples
+        pos_anchor_img, pos_img, neg_img = dset_obj.getTriplet(mix=MIX_FLAG)
         train_triplets.append([pos_anchor_img, pos_img, neg_img])
     for i in range(args.num_test_samples):
-        pos_anchor_img, pos_img, neg_img = dset_obj.getTriplet(split='test')
+        MIX_FLAG = i > 0.8*args.num_test_samples
+        pos_anchor_img, pos_img, neg_img = dset_obj.getTriplet(mix=MIX_FLAG, split='test')
         test_triplets.append([pos_anchor_img, pos_img, neg_img])
 
     train_data_loader = torch.utils.data.DataLoader(
         loader(train_triplets,
                transform=transforms.Compose([
+                   transforms.ToPILImage(),
+                #    transforms.RandomAutocontrast(0.4),
+                    transforms.ColorJitter(brightness=0.3, contrast=1, saturation=0, hue=0), 
+                #    transforms.Grayscale(3),
+
+                    # transforms.RandomInvert(), 
+                    transforms.RandomHorizontalFlip(),
+                #    transforms.AutoAugment(),
                    transforms.ToTensor(),
                    transforms.Normalize(means, stds)
                ])),
@@ -113,6 +140,8 @@ def get_loader(args):
     test_data_loader = torch.utils.data.DataLoader(
         loader(test_triplets,
                transform=transforms.Compose([
+                   transforms.ToPILImage(),
+                #    transforms.Grayscale(3),
                    transforms.ToTensor(),
                    transforms.Normalize(means, stds)
                ])),

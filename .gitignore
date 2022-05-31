@@ -105,3 +105,8 @@ venv.bak/
 
 .idea
 data
+*augument*
+cr_rotate_1
+results
+pretrain
+test_image

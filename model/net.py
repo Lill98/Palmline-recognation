@@ -21,19 +21,26 @@ def get_model(args, device):
     # Model
     embeddingNet = None
     if (args.dataset == 'custom') or (args.dataset == 'vggface2'):
+        print("--loading resnet")
         embeddingNet = embedding.EmbeddingResnet()
     elif (args.dataset == 'mnist') or (args.dataset == 'fmnist'):
+        print("--loading lenet")
+
         embeddingNet = embedding.EmbeddingLeNet()
     else:
         print("Dataset %s not supported " % args.dataset)
-        return None
+        print("--loading efficientnet")
+
+        embeddingNet = embedding.EmbeddingNet()
 
     model = TripletNet(embeddingNet)
     model = nn.DataParallel(model, device_ids=args.gpu_devices)
     model = model.to(device)
 
     # Load weights if provided
+    print(args)
     if args.ckp:
+        print("args.ckp",args.ckp)
         if os.path.isfile(args.ckp):
             print("=> Loading checkpoint '{}'".format(args.ckp))
             checkpoint = torch.load(args.ckp)
